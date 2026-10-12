@@ -2,34 +2,72 @@ version: 2
 
 models:
   - name: dim_customers
+    description: "Dimension des clients, enrichie avec leur pays et continent d'appartenance."
     columns:
       - name: customer_key
+        description: "Clé primaire naturelle du client."
         tests:
           - unique
           - not_null
+      - name: customer_name
+        description: "Nom d'identification du client."
+      - name: market_segment
+        description: "Segment commercial du client (ex. AUTOMOBILE, BUILDING, MACHINERY)."
+      - name: country
+        description: "Pays de résidence du client (dénormalisé depuis nation)."
+      - name: continent
+        description: "Continent de résidence du client (dénormalisé depuis region)."
 
   - name: dim_parts
+    description: "Dimension des pièces détachées vendues au catalogue."
     columns:
       - name: part_key
+        description: "Clé primaire naturelle de la pièce."
         tests:
           - unique
           - not_null
+      - name: part_name
+        description: "Désignation commerciale de la pièce."
+      - name: manufacturer
+        description: "Fabricant de la pièce."
+      - name: brand
+        description: "Marque commerciale."
+      - name: retail_price
+        description: "Prix unitaire de vente recommandé au catalogue."
 
   - name: dim_suppliers
+    description: "Dimension des fournisseurs de pièces, incluant leur géographie."
     columns:
       - name: supplier_key
+        description: "Clé primaire naturelle du fournisseur."
+        tests:
+          - unique
+          - not_null
+      - name: supplier_name
+        description: "Raison sociale du fournisseur."
+      - name: country
+        description: "Pays d'implantation du fournisseur (dénormalisé depuis nation)."
+      - name: continent
+        description: "Continent d'implantation du fournisseur (dénormalisé depuis region)."
+
+  - name: fct_order_items
+    description: >
+      Table de faits des ventes (grain : une ligne par article au sein d'une commande).
+      Contient les montants facturés, remises et calculs de rentabilité.
+    columns:
+      - name: order_item_key
+        description: "Clé primaire de substitution (hash MD5 de order_key et line_number)."
         tests:
           - unique
           - not_null
 
-  - name: fct_order_items
-    columns:
-      - name: order_item_key
+      - name: order_key
+        description: "Identifiant de la commande globale (dimension dégénérée)."
         tests:
-          - unique
           - not_null
 
       - name: customer_key
+        description: "Clé étrangère reliant à la dimension client (dim_customers)."
         tests:
           - not_null
           - relationships:
@@ -38,6 +76,7 @@ models:
                 field: customer_key
 
       - name: part_key
+        description: "Clé étrangère reliant à la dimension pièce (dim_parts)."
         tests:
           - not_null
           - relationships:
@@ -46,6 +85,7 @@ models:
                 field: part_key
 
       - name: supplier_key
+        description: "Clé étrangère reliant au fournisseur ayant vendu la pièce (dim_suppliers)."
         tests:
           - not_null
           - relationships:
@@ -54,19 +94,31 @@ models:
                 field: supplier_key
 
       - name: line_status
+        description: "Statut logistique de la ligne (O = Ouverte, F = Clôturée/Livrée)."
         tests:
           - accepted_values:
               arguments:
                 values: ['O', 'F']
 
+      - name: gross_item_sales_amount
+        description: "Montant brut de la ligne avant remise et taxes (quantité * prix unitaire)."
+
+      - name: net_item_sales_amount
+        description: "Montant net facturé après application de la remise commerciale."
+
   - name: fct_supplier_parts
+    description: >
+      Table de faits des stocks et approvisionnements (grain : une ligne par couple pièce x fournisseur).
+      Permet de suivre les coûts d'achat unitaires et les volumes disponibles chez chaque fournisseur.
     columns:
       - name: part_supplier_key
+        description: "Clé primaire de substitution (hash MD5 de part_key et supplier_key)."
         tests:
           - unique
           - not_null
 
       - name: part_key
+        description: "Clé étrangère reliant à la dimension pièce (dim_parts)."
         tests:
           - not_null
           - relationships:
@@ -75,6 +127,7 @@ models:
                 field: part_key
 
       - name: supplier_key
+        description: "Clé étrangère reliant à la dimension fournisseur (dim_suppliers)."
         tests:
           - not_null
           - relationships:
@@ -83,9 +136,14 @@ models:
                 field: supplier_key
 
       - name: available_quantity
+        description: "Nombre d'unités actuellement disponibles en stock chez le fournisseur."
         tests:
           - not_null
 
       - name: supply_cost
+        description: "Coût unitaire d'achat auprès du fournisseur."
         tests:
           - not_null
+
+      - name: total_stock_value
+        description: "Valeur totale du stock disponible (quantité disponible * coût unitaire)."
