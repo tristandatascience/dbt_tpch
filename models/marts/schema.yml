@@ -1,0 +1,91 @@
+version: 2
+
+models:
+  - name: dim_customers
+    columns:
+      - name: customer_key
+        tests:
+          - unique
+          - not_null
+
+  - name: dim_parts
+    columns:
+      - name: part_key
+        tests:
+          - unique
+          - not_null
+
+  - name: dim_suppliers
+    columns:
+      - name: supplier_key
+        tests:
+          - unique
+          - not_null
+
+  - name: fct_order_items
+    columns:
+      - name: order_item_key
+        tests:
+          - unique
+          - not_null
+
+      - name: customer_key
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_customers')
+                field: customer_key
+
+      - name: part_key
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_parts')
+                field: part_key
+
+      - name: supplier_key
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_suppliers')
+                field: supplier_key
+
+      - name: line_status
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['O', 'F']
+
+  - name: fct_supplier_parts
+    columns:
+      - name: part_supplier_key
+        tests:
+          - unique
+          - not_null
+
+      - name: part_key
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_parts')
+                field: part_key
+
+      - name: supplier_key
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_suppliers')
+                field: supplier_key
+
+      - name: available_quantity
+        tests:
+          - not_null
+
+      - name: supply_cost
+        tests:
+          - not_null
