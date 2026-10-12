@@ -2,8 +2,6 @@
 
 Projet dbt qui transforme les données brutes **TPC-H** (`SNOWFLAKE_SAMPLE_DATA.TPCH_SF1` sur Snowflake) en un modèle en étoile propre et testé pour l'analyse des ventes, des clients, des pièces et des fournisseurs.
 
-> Ce n'est pas le projet Jaffle Shop : ici, pas de restaurant fictif, mais le benchmark décisionnel standard TPC-H (commandes, lignes de commandes, clients, pièces, fournisseurs).
-
 ## 1. Source : schéma 3NF TPC-H
 
 Base : `SNOWFLAKE_SAMPLE_DATA` / schéma `TPCH_SF1` — 8 tables normalisées déclarées dans `models/staging/tpch/src_tpch.yml` :
