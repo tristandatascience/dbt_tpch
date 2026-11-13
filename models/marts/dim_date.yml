@@ -1,0 +1,64 @@
+version: 2
+
+models:
+  - name: dim_date
+    description: >
+      Dimension des dates (grain : un jour calendaire). Dimension autonome et
+      conformée : elle est référencée par les faits via date_key.
+      La plage couverte est paramétrée par les variables dim_date_start_date et
+      dim_date_end_date de dbt_project.yml.
+    columns:
+      - name: date_key
+        description: "Clé primaire surrogate (entier au format YYYYMMDD, ex. 19920315)."
+        data_tests:
+          - unique
+          - not_null
+      - name: date_day
+        description: "Date calendaire (colonne naturelle, clé de jointure avec les faits)."
+        data_tests:
+          - unique
+          - not_null
+      - name: year_number
+        description: "Année de la date."
+        data_tests:
+          - not_null
+      - name: quarter_number
+        description: "Trimestre de la date (1 à 4)."
+        data_tests:
+          - not_null
+      - name: month_number
+        description: "Mois de la date (1 à 12)."
+        data_tests:
+          - not_null
+      - name: month_name
+        description: "Nom du mois (en anglais, dépend de la locale de la session)."
+      - name: day_of_month_number
+        description: "Jour du mois (1 à 31)."
+        data_tests:
+          - not_null
+      - name: day_of_week_number
+        description: "Jour de la semaine (0 = dimanche ... 6 = samedi)."
+        data_tests:
+          - not_null
+      - name: day_of_week_name
+        description: "Nom du jour de la semaine (en anglais, dépend de la locale de la session)."
+      - name: day_of_year_number
+        description: "Rang du jour dans l'année (1 à 366)."
+        data_tests:
+          - not_null
+      - name: week_of_year_number
+        description: "Numéro de semaine dans l'année (selon le paramètre session WEEK_START)."
+        data_tests:
+          - not_null
+      - name: is_weekend
+        description: "Vrai si la date tombe un samedi ou un dimanche."
+        data_tests:
+          - not_null
+      - name: is_month_start
+        description: "Vrai si la date est le premier jour du mois."
+        data_tests:
+          - not_null
+      - name: is_month_end
+        description: "Vrai si la date est le dernier jour du mois."
+        data_tests:
+          - not_null

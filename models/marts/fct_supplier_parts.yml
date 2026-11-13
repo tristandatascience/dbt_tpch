@@ -1,0 +1,59 @@
+version: 2
+
+models:
+  - name: fct_supplier_parts
+    description: >
+      Table de faits d'approvisionnement (grain : pièce x fournisseur).
+      Processus métier : catalogue / disponibilité fournisseur.
+      Deuxième table de faits du projet, aux côtés de fct_order_items (ventes),
+      avec laquelle elle partage les dimensions conformes dim_parts et dim_suppliers.
+      Ne porte pas de dimension temporelle : elle décrit l'état courant du
+      catalogue fournisseurs.
+    data_tests:
+      # Le grain doit être conservé : un couple pièce x fournisseur en entrée, un en sortie.
+      - dbt_utils.equal_rowcount:
+          arguments:
+            compare_model: ref('stg_tpch_partsupp')
+      # La valeur de stock est une mesure calculée : elle doit rester cohérente.
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "total_stock_value = round(available_quantity * supply_cost, 2)"
+    columns:
+      - name: part_supplier_key
+        description: "Clé primaire de substitution (hash MD5 de ps_partkey et ps_suppkey, via dbt_utils.generate_surrogate_key)."
+        data_tests:
+          - unique
+          - not_null
+
+      - name: part_key
+        description: "Clé étrangère reliant à la dimension pièce (dim_parts), conformée avec fct_order_items."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_parts')
+                field: part_key
+
+      - name: supplier_key
+        description: "Clé étrangère reliant à la dimension fournisseur (dim_suppliers), conformée avec fct_order_items."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_suppliers')
+                field: supplier_key
+
+      - name: available_quantity
+        description: "Nombre d'unités actuellement disponibles en stock chez le fournisseur (mesure semi-additive)."
+        data_tests:
+          - not_null
+
+      - name: supply_cost
+        description: "Coût unitaire d'achat auprès du fournisseur (mesure non additive)."
+        data_tests:
+          - not_null
+
+      - name: total_stock_value
+        description: "Valeur totale du stock disponible (quantité disponible * coût unitaire, mesure additive)."
+        data_tests:
+          - not_null

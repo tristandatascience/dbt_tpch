@@ -1,0 +1,30 @@
+version: 2
+
+models:
+  - name: stg_tpch_part
+    description: >
+      Catalogue de pièces. Grain : une pièce.
+      Transformation : renommage des colonnes de la table part
+      (p_partkey → part_key, p_mfgr → manufacturer, p_retailprice → retail_price, etc.).
+    columns:
+      - name: part_key
+        description: "Clé primaire de la pièce."
+        data_tests:
+          - unique
+          - not_null
+      - name: part_name
+        description: "Désignation commerciale de la pièce."
+      - name: manufacturer
+        description: "Fabricant de la pièce."
+      - name: brand
+        description: "Marque commerciale de la pièce."
+      - name: part_type
+        description: "Type de pièce (ex. STANDARD, SMALL PLATED, MEDIUM POLISHED...)."
+      - name: part_size
+        description: "Taille de la pièce (catégorie numérique)."
+      - name: container
+        description: "Conditionnement de la pièce (ex. SM CASE, MED BAG, LG BOX...)."
+      - name: retail_price
+        description: "Prix unitaire de vente recommandé au catalogue."
+      - name: comment
+        description: "Commentaire libre sur la pièce (non exploité analytiquement)."

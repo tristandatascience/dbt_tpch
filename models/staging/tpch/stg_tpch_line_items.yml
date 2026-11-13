@@ -1,0 +1,61 @@
+version: 2
+
+models:
+  - name: stg_tpch_line_items
+    description: >
+      Lignes de commande. Grain : une ligne de commande (commande + numéro de ligne).
+      Transformation : renommage des colonnes de la table lineitem
+      (l_orderkey → order_key, l_extendedprice → gross_item_sales_amount, etc.)
+      et génération de la clé surrogate order_item_key.
+    columns:
+      - name: order_item_key
+        description: "Clé primaire de substitution de la ligne (hash MD5 de l_orderkey et l_linenumber)."
+        data_tests:
+          - unique
+          - not_null
+      - name: order_key
+        description: "Clé étrangère vers la commande à laquelle la ligne appartient."
+        data_tests:
+          - not_null
+      - name: part_key
+        description: "Clé étrangère vers la pièce commandée."
+        data_tests:
+          - not_null
+      - name: supplier_key
+        description: "Clé étrangère vers le fournisseur ayant fourni la pièce pour cette ligne."
+        data_tests:
+          - not_null
+      - name: line_number
+        description: "Numéro de la ligne au sein de la commande (1, 2, 3...)."
+      - name: quantity
+        description: "Quantité d'articles commandés sur la ligne."
+      - name: gross_item_sales_amount
+        description: "Montant brut de la ligne avant remise et taxes (quantité x prix unitaire)."
+      - name: discount_percentage
+        description: "Taux de remise commerciale appliqué sur la ligne (0-1)."
+      - name: tax_rate
+        description: "Taux de TVA appliqué sur la ligne (0-1)."
+      - name: return_flag
+        description: "Indicateur de retour (R = retourné, A = accepté, N = non retourné)."
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['R', 'A', 'N']
+      - name: line_status
+        description: "Statut logistique de la ligne (O = Ouverte, F = Clôturée)."
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['O', 'F']
+      - name: ship_date
+        description: "Date d'expédition prévue de la ligne."
+      - name: commit_date
+        description: "Date d'engagement de livraison de la ligne."
+      - name: receipt_date
+        description: "Date de réception effective de la ligne."
+      - name: shipping_instructions
+        description: "Instructions de livraison (ex. DELIVER IN PERSON, COLLECT COD)."
+      - name: shipping_mode
+        description: "Mode de livraison (ex. AIR, RAIL, SHIP, TRUCK, MAIL, FOB)."
+      - name: comment
+        description: "Commentaire libre sur la ligne (non exploité analytiquement)."

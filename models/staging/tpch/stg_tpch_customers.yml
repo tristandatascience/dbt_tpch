@@ -1,0 +1,30 @@
+version: 2
+
+models:
+  - name: stg_tpch_customers
+    description: >
+      Clients, renommés en clés et attributs métier. Grain : un client.
+      Transformation : renommage des colonnes de la table customer
+      (c_custkey → customer_key, c_acctbal → account_balance, etc.).
+    columns:
+      - name: customer_key
+        description: "Clé primaire du client."
+        data_tests:
+          - unique
+          - not_null
+      - name: customer_name
+        description: "Nom d'identification du client."
+      - name: address
+        description: "Adresse postale du client."
+      - name: nation_key
+        description: "Clé étrangère vers la nation du client."
+        data_tests:
+          - not_null
+      - name: phone_number
+        description: "Numéro de téléphone du client."
+      - name: account_balance
+        description: "Solde du compte client."
+      - name: market_segment
+        description: "Segment commercial du client (AUTOMOBILE, BUILDING, MACHINERY, ...)."
+      - name: comment
+        description: "Commentaire libre du client (non exploité analytiquement)."

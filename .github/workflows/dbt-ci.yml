@@ -1,0 +1,107 @@
+name: dbt CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Deux runs concurrents partageraient le même schema Snowflake (DBT_CI_*) :
+# on les sérialise par branche.
+concurrency:
+  group: dbt-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  dbt-build:
+    name: dbt build (Snowflake)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dbt
+        run: |
+          python -m pip install --upgrade pip
+          # dbt v2 (build Fusion) : l'adaptateur Snowflake est inclus.
+          # La version est épinglée sur celle utilisée en local (2.0.5).
+          pip install "dbt==2.0.5"
+          dbt --version
+
+      - name: Write Snowflake key pair
+        env:
+          SNOWFLAKE_PRIVATE_KEY: ${{ secrets.SNOWFLAKE_PRIVATE_KEY }}
+          SNOWFLAKE_PRIVATE_KEY_PASSPHRASE: ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSPHRASE }}
+        run: |
+          mkdir -p ~/.dbt
+          printf '%s\n' "$SNOWFLAKE_PRIVATE_KEY" > ~/.dbt/rsa_key.p8
+          chmod 600 ~/.dbt/rsa_key.p8
+          if [ -n "$SNOWFLAKE_PRIVATE_KEY_PASSPHRASE" ]; then
+            printf '%s\n' "$SNOWFLAKE_PRIVATE_KEY_PASSPHRASE" > ~/.dbt/rsa_key_passphrase.txt
+            chmod 600 ~/.dbt/rsa_key_passphrase.txt
+          fi
+
+      - name: Write profiles.yml
+        env:
+          SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+          SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
+          SNOWFLAKE_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
+          SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
+          SNOWFLAKE_DATABASE: ${{ secrets.SNOWFLAKE_DATABASE }}
+          SNOWFLAKE_PRIVATE_KEY_PASSPHRASE: ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSPHRASE }}
+        run: |
+          {
+            echo "tpch_analytics:"
+            echo "  target: ci"
+            echo "  outputs:"
+            echo "    ci:"
+            echo "      type: snowflake"
+            echo "      threads: 8"
+            echo "      account: ${SNOWFLAKE_ACCOUNT}"
+            echo "      user: ${SNOWFLAKE_USER}"
+            echo "      role: ${SNOWFLAKE_ROLE}"
+            echo "      warehouse: ${SNOWFLAKE_WAREHOUSE}"
+            echo "      database: ${SNOWFLAKE_DATABASE}"
+            # Schema cible du CI : les +schema par couche produisent
+            # DBT_CI_STAGING / DBT_CI_INTERMEDIATE / DBT_CI_MARTS.
+            echo "      schema: DBT_CI"
+            echo "      private_key_path: ~/.dbt/rsa_key.p8"
+            if [ -n "$SNOWFLAKE_PRIVATE_KEY_PASSPHRASE" ]; then
+              echo "      private_key_passphrase_path: ~/.dbt/rsa_key_passphrase.txt"
+            fi
+          } > ~/.dbt/profiles.yml
+
+      - name: dbt deps
+        run: dbt deps --target ci
+
+      - name: dbt parse (contrôle rapide de la syntaxe)
+        run: dbt parse --target ci
+
+      - name: dbt build (modèles + tests)
+        run: dbt build --target ci
+
+      - name: dbt docs generate
+        if: always()
+        run: dbt docs generate --target ci
+
+      - name: Upload artifacts dbt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dbt-artifacts-${{ github.run_number }}
+          path: |
+            target/manifest.json
+            target/catalog.json
+            target/run_results.json
+          retention-days: 14

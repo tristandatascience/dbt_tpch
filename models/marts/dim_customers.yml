@@ -1,0 +1,27 @@
+version: 2
+
+models:
+  - name: dim_customers
+    description: "Dimension des clients, enrichie avec leur pays et continent d'appartenance."
+    data_tests:
+      - dbt_utils.equal_rowcount:
+          arguments:
+            compare_model: ref('stg_tpch_customers')
+    columns:
+      - name: customer_key
+        description: "Clé primaire naturelle du client."
+        data_tests:
+          - unique
+          - not_null
+      - name: customer_name
+        description: "Nom d'identification du client."
+      - name: market_segment
+        description: "Segment commercial du client (ex. AUTOMOBILE, BUILDING, MACHINERY)."
+      - name: country
+        description: "Pays de résidence du client (dénormalisé depuis nation)."
+        data_tests:
+          - not_null
+      - name: continent
+        description: "Continent de résidence du client (dénormalisé depuis region)."
+        data_tests:
+          - not_null

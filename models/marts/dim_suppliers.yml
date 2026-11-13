@@ -1,0 +1,31 @@
+version: 2
+
+models:
+  - name: dim_suppliers
+    description: "Dimension des fournisseurs de pièces, incluant leur géographie."
+    data_tests:
+      - dbt_utils.equal_rowcount:
+          arguments:
+            compare_model: ref('stg_tpch_suppliers')
+    columns:
+      - name: supplier_key
+        description: "Clé primaire naturelle du fournisseur."
+        data_tests:
+          - unique
+          - not_null
+      - name: supplier_name
+        description: "Raison sociale du fournisseur."
+      - name: address
+        description: "Adresse postale du fournisseur."
+      - name: phone_number
+        description: "Numéro de téléphone du fournisseur."
+      - name: account_balance
+        description: "Solde du compte fournisseur."
+      - name: country
+        description: "Pays d'implantation du fournisseur (dénormalisé depuis nation)."
+        data_tests:
+          - not_null
+      - name: continent
+        description: "Continent d'implantation du fournisseur (dénormalisé depuis region)."
+        data_tests:
+          - not_null

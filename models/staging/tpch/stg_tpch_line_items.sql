@@ -8,7 +8,7 @@ renamed as (
 
     select
         -- surrogate primary key
-        md5(cast(l_orderkey as varchar) || '-' || cast(l_linenumber as varchar)) as order_item_key,
+        {{ dbt_utils.generate_surrogate_key(['l_orderkey', 'l_linenumber']) }} as order_item_key,
 
         -- foreign keys
         l_orderkey as order_key,

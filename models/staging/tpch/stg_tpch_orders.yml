@@ -1,0 +1,37 @@
+version: 2
+
+models:
+  - name: stg_tpch_orders
+    description: >
+      Commandes clients. Grain : une commande.
+      Transformation : renommage des colonnes de la table orders
+      (o_orderkey → order_key, o_totalprice → total_price, o_clerk → clerk_name, etc.).
+    columns:
+      - name: order_key
+        description: "Clé primaire de la commande."
+        data_tests:
+          - unique
+          - not_null
+      - name: customer_key
+        description: "Clé étrangère vers le client ayant passé la commande."
+        data_tests:
+          - not_null
+      - name: order_status
+        description: "Statut de la commande (O = Ouverte, F = Clôturée, P = Partiellement clôturée)."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['O', 'F', 'P']
+      - name: total_price
+        description: "Montant total de la commande, toutes taxes et remises comprises."
+      - name: order_date
+        description: "Date de passation de la commande."
+      - name: order_priority
+        description: "Priorité de traitement de la commande (1 = la plus urgente)."
+      - name: clerk_name
+        description: "Identifiant du vendeur ayant pris la commande."
+      - name: ship_priority
+        description: "Priorité d'expédition de la commande (0 = la plus urgente)."
+      - name: comment
+        description: "Commentaire libre sur la commande (non exploité analytiquement)."

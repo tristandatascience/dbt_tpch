@@ -2,62 +2,98 @@ version: 2
 
 sources:
   - name: tpch
+    description: >
+      Benchmark TPC-H, facteur d'échelle 1 (SF1). Schéma 3NF d'origine, en lecture seule.
+      8 tables normalisées couvrant commandes, clients, fournisseurs, pièces et géographie.
     database: SNOWFLAKE_SAMPLE_DATA
     schema: TPCH_SF1
     tables:
       - name: orders
+        description: >
+          Commandes clients. Grain : une commande (o_orderkey).
+          1 commande → N lignes de commande (table lineitem).
         columns:
           - name: o_orderkey
-            tests:
+            description: "Identifiant de la commande (clé primaire)."
+            data_tests:
               - unique
               - not_null
 
       - name: lineitem
+        description: >
+          Lignes de commande. Grain : une ligne de commande (o_orderkey + l_linenumber).
+          1 commande → N lignes ; chaque ligne porte sa quantité, son prix, sa remise et sa TVA.
         columns:
           - name: l_orderkey
-            tests:
+            description: "Identifiant de la commande à laquelle la ligne appartient (clé étrangère vers orders)."
+            data_tests:
               - not_null
 
       - name: customer
+        description: >
+          Clients. Grain : un client (c_custkey).
+          1 client → N commandes (table orders).
         columns:
           - name: c_custkey
-            tests:
+            description: "Identifiant du client (clé primaire)."
+            data_tests:
               - unique
               - not_null
 
       - name: part
+        description: >
+          Catalogue de pièces. Grain : une pièce (p_partkey).
+          1 pièce → N fournisseurs qui la commercialisent (table partsupp).
         columns:
           - name: p_partkey
-            tests:
+            description: "Identifiant de la pièce (clé primaire)."
+            data_tests:
               - unique
               - not_null
 
       - name: supplier
+        description: >
+          Fournisseurs. Grain : un fournisseur (s_suppkey).
+          1 fournisseur → N couples pièce x fournisseur (table partsupp).
         columns:
           - name: s_suppkey
-            tests:
+            description: "Identifiant du fournisseur (clé primaire)."
+            data_tests:
               - unique
               - not_null
 
       - name: partsupp
+        description: >
+          Disponibilité et coût d'achat des pièces chez les fournisseurs.
+          Grain : un couple pièce x fournisseur (ps_partkey, ps_suppkey) — clé primaire composée.
         columns:
           - name: ps_partkey
-            tests:
+            description: "Identifiant de la pièce (clé étrangère vers part)."
+            data_tests:
               - not_null
           - name: ps_suppkey
-            tests:
+            description: "Identifiant du fournisseur (clé étrangère vers supplier)."
+            data_tests:
               - not_null
 
       - name: nation
+        description: >
+          Pays. Grain : un pays (n_nationkey).
+          1 région → N pays ; 1 pays → N clients et N fournisseurs.
         columns:
           - name: n_nationkey
-            tests:
+            description: "Identifiant du pays (clé primaire)."
+            data_tests:
               - unique
               - not_null
 
       - name: region
+        description: >
+          Régions (continents). Grain : une région (r_regionkey).
+          1 région → N pays (table nation).
         columns:
           - name: r_regionkey
-            tests:
+            description: "Identifiant de la région (clé primaire)."
+            data_tests:
               - unique
               - not_null

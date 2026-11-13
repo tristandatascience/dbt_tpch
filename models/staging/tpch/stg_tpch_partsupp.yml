@@ -1,0 +1,29 @@
+version: 2
+
+models:
+  - name: stg_tpch_partsupp
+    description: >
+      Disponibilité et coût d'achat des pièces chez les fournisseurs.
+      Grain : un couple pièce x fournisseur (ps_partkey, ps_suppkey).
+      Transformation : renommage des colonnes de la table partsupp
+      et génération de la clé surrogate composite part_supplier_key.
+    columns:
+      - name: part_supplier_key
+        description: "Clé primaire de substitution du couple pièce x fournisseur (hash MD5 de ps_partkey et ps_suppkey)."
+        data_tests:
+          - unique
+          - not_null
+      - name: part_key
+        description: "Clé étrangère vers la pièce."
+        data_tests:
+          - not_null
+      - name: supplier_key
+        description: "Clé étrangère vers le fournisseur."
+        data_tests:
+          - not_null
+      - name: available_quantity
+        description: "Nombre d'unités de la pièce disponibles chez le fournisseur."
+      - name: supply_cost
+        description: "Coût unitaire d'achat de la pièce auprès du fournisseur."
+      - name: comment
+        description: "Commentaire libre sur le couple pièce x fournisseur (non exploité analytiquement)."

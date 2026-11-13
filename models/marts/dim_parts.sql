@@ -11,8 +11,7 @@ select
     part_type,
     part_size,
     container,
-    retail_price,
-    comment
+    retail_price
 from parts
 )
 

@@ -1,0 +1,22 @@
+version: 2
+
+models:
+  - name: stg_tpch_nations
+    description: >
+      Pays. Grain : un pays.
+      Transformation : renommage des colonnes de la table nation
+      (n_nationkey → nation_key, n_name → nation_name, n_regionkey → region_key).
+    columns:
+      - name: nation_key
+        description: "Clé primaire du pays."
+        data_tests:
+          - unique
+          - not_null
+      - name: nation_name
+        description: "Nom du pays."
+      - name: region_key
+        description: "Clé étrangère vers la région à laquelle appartient le pays."
+        data_tests:
+          - not_null
+      - name: comment
+        description: "Commentaire libre sur le pays (non exploité analytiquement)."

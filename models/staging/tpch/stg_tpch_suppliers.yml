@@ -1,0 +1,28 @@
+version: 2
+
+models:
+  - name: stg_tpch_suppliers
+    description: >
+      Fournisseurs. Grain : un fournisseur.
+      Transformation : renommage des colonnes de la table supplier
+      (s_suppkey → supplier_key, s_acctbal → account_balance, etc.).
+    columns:
+      - name: supplier_key
+        description: "Clé primaire du fournisseur."
+        data_tests:
+          - unique
+          - not_null
+      - name: supplier_name
+        description: "Raison sociale du fournisseur."
+      - name: address
+        description: "Adresse postale du fournisseur."
+      - name: nation_key
+        description: "Clé étrangère vers la nation du fournisseur."
+        data_tests:
+          - not_null
+      - name: phone_number
+        description: "Numéro de téléphone du fournisseur."
+      - name: account_balance
+        description: "Solde du compte fournisseur."
+      - name: comment
+        description: "Commentaire libre sur le fournisseur (non exploité analytiquement)."

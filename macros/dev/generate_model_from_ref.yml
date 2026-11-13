@@ -1,0 +1,15 @@
+version: 2
+
+macros:
+  - name: generate_model_from_ref
+    description: >
+      Macro de développement : affiche le squelette SQL d'un modèle à partir des
+      colonnes d'une relation existante. Masquée de la documentation dbt
+      (`docs.show: false`) car elle ne fait pas partie de la chaîne de production.
+    config:
+      docs:
+        show: false
+    arguments:
+      - name: model_name
+        type: string
+        description: "Nom du modèle dbt dont on veut générer le squelette."

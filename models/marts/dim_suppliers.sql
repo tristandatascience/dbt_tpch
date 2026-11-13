@@ -23,15 +23,12 @@ final as (
 
         -- Géographie aplatie
         nations.nation_name as country,
-        regions.region_name as continent,
-
-        -- Métadonnées
-        suppliers.comment
+        regions.region_name as continent
 
     from suppliers
-    inner join nations
+    left join nations
         on suppliers.nation_key = nations.nation_key
-    inner join regions
+    left join regions
         on nations.region_key = regions.region_key
 )
 

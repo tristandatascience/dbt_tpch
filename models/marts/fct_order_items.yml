@@ -1,0 +1,132 @@
+version: 2
+
+models:
+  - name: fct_order_items
+    description: >
+      Table de faits des ventes (grain : une ligne par article au sein d'une commande).
+      Contient les montants facturés, remises et calculs de rentabilité.
+      Les calculs métier sont isolés dans le modèle intermediate
+      int_order_items_calculated, qui porte l'intégralité de la logique de valorisation.
+    columns:
+      - name: order_item_key
+        description: "Clé primaire de substitution (hash MD5 de l_orderkey et l_linenumber, via dbt_utils.generate_surrogate_key)."
+        data_tests:
+          - unique
+          - not_null
+
+      - name: order_key
+        description: "Identifiant de la commande globale (dimension dégénérée)."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_tpch_orders')
+                field: order_key
+
+      - name: order_date
+        description: "Date de passation de la commande."
+        data_tests:
+          - not_null
+
+      - name: customer_key
+        description: "Clé étrangère reliant à la dimension client (dim_customers)."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_customers')
+                field: customer_key
+
+      - name: part_key
+        description: "Clé étrangère reliant à la dimension pièce (dim_parts)."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_parts')
+                field: part_key
+
+      - name: supplier_key
+        description: "Clé étrangère reliant au fournisseur ayant vendu la pièce (dim_suppliers)."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_suppliers')
+                field: supplier_key
+
+      - name: line_status
+        description: "Statut logistique de la ligne (O = Ouverte, F = Clôturée/Livrée)."
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['O', 'F']
+
+      - name: gross_item_sales_amount
+        description: "Montant brut de la ligne avant remise et taxes (quantité * prix unitaire)."
+
+      - name: net_item_sales_amount
+        description: "Montant net facturé après application de la remise commerciale."
+
+      - name: total_cost_amount
+        description: "Coût d'achat total de la ligne (quantité x coût unitaire fournisseur)."
+        data_tests:
+          - not_null
+
+      - name: gross_profit_amount
+        description: "Marge brute de la ligne (montant net - coût d'achat)."
+        data_tests:
+          - not_null
+
+      - name: delivery_delay_days
+        description: >
+          Nombre de jours entre la date de commande et la date d'expédition.
+          Calculé dans int_order_items_calculated.
+        data_tests:
+          - not_null
+
+      - name: is_returned
+        description: "Vrai si la ligne a fait l'objet d'un retour (return_flag = 'R')."
+        data_tests:
+          - not_null
+
+      - name: gross_margin_percentage
+        description: >
+          Taux de marge brute (marge brute / montant net, arrondi à 4 décimales).
+          NULL si le montant net est nul.
+
+      - name: order_date_key
+        description: "Clé étrangère date de la commande (dim_date)."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_key
+
+      - name: ship_date_key
+        description: "Clé étrangère date d'expédition (dim_date)."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_key
+
+      - name: commit_date_key
+        description: "Clé étrangère date d'engagement de livraison (dim_date)."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_key
+
+      - name: receipt_date_key
+        description: "Clé étrangère date de réception effective (dim_date)."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_key

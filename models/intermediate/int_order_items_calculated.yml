@@ -1,0 +1,117 @@
+version: 2
+
+models:
+  - name: int_order_items_calculated
+    description: >
+      Lignes de commande enrichies et valorisées (grain : une ligne par ligne de commande).
+      Porte la logique de calcul métier — remise, TVA, montant net, coût d'achat, marge —
+      ainsi que les attributs analytiques dérivés (délai de livraison, indicateur de retour,
+      taux de marge). Cette logique est isolée du mart pour la rendre lisible et
+      testable indépendamment.
+    data_tests:
+      # Le grain doit être conservé : une ligne de commande en entrée, une en sortie.
+      # Détecte toute perte de ligne liée au inner join sur orders.
+      - dbt_utils.equal_rowcount:
+          arguments:
+            compare_model: ref('stg_tpch_line_items')
+
+      # Les montants sont arrondis à 2 décimales, les ratios à 4.
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "item_discount_amount = round(gross_item_sales_amount * discount_percentage, 2)"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "net_item_sales_amount = round(gross_item_sales_amount * (1 - discount_percentage), 2)"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "item_tax_amount = round(gross_item_sales_amount * (1 - discount_percentage) * tax_rate, 2)"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "total_item_sales_amount_with_tax = round(gross_item_sales_amount * (1 - discount_percentage) * (1 + tax_rate), 2)"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "total_cost_amount = round(quantity * coalesce(supply_cost, 0), 2)"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "gross_profit_amount = round((gross_item_sales_amount * (1 - discount_percentage)) - (quantity * coalesce(supply_cost, 0)), 2)"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "gross_margin_percentage = round(gross_profit_amount / nullif(net_item_sales_amount, 0), 4)"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "delivery_delay_days = datediff('day', order_date, ship_date)"
+
+      # Règles de gestion (tolérance de 0.02 : écart max induit par les arrondis).
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "abs(gross_profit_amount - (net_item_sales_amount - total_cost_amount)) <= 0.02"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "abs(total_item_sales_amount_with_tax - (net_item_sales_amount + item_tax_amount)) <= 0.02"
+
+    columns:
+      - name: order_item_key
+        description: "Clé primaire de substitution (grain : une ligne de commande)."
+        data_tests:
+          - unique
+          - not_null
+      - name: order_key
+        description: "Identifiant de la commande (dimension dégénérée)."
+        data_tests:
+          - not_null
+      - name: customer_key
+        description: "Clé étrangère vers le client (dim_customers)."
+        data_tests:
+          - not_null
+      - name: part_key
+        description: "Clé étrangère vers la pièce (dim_parts)."
+        data_tests:
+          - not_null
+      - name: supplier_key
+        description: "Clé étrangère vers le fournisseur (dim_suppliers)."
+        data_tests:
+          - not_null
+      - name: quantity
+        description: "Quantité d'articles commandés sur la ligne."
+        data_tests:
+          - not_null
+      - name: gross_item_sales_amount
+        description: "Montant brut de la ligne avant remise et taxes."
+        data_tests:
+          - not_null
+      - name: discount_percentage
+        description: "Taux de remise commerciale appliqué (0-1)."
+        data_tests:
+          - not_null
+      - name: tax_rate
+        description: "Taux de TVA appliqué (0-1)."
+        data_tests:
+          - not_null
+      - name: item_discount_amount
+        description: "Montant de la remise commerciale (brut x taux de remise)."
+        data_tests:
+          - not_null
+      - name: net_item_sales_amount
+        description: "Montant net facturé après application de la remise."
+        data_tests:
+          - not_null
+      - name: total_cost_amount
+        description: "Coût d'achat total de la ligne (quantité x coût unitaire fournisseur)."
+        data_tests:
+          - not_null
+      - name: gross_profit_amount
+        description: "Marge brute de la ligne (net - coût d'achat)."
+        data_tests:
+          - not_null
+      - name: delivery_delay_days
+        description: "Nombre de jours entre la date de commande et la date d'expédition."
+        data_tests:
+          - not_null
+      - name: is_returned
+        description: "Vrai si la ligne a fait l'objet d'un retour (return_flag = 'R')."
+        data_tests:
+          - not_null
+      - name: gross_margin_percentage
+        description: >
+          Taux de marge brute (marge / montant net, arrondi à 4 décimales).
+          NULL si le montant net est nul.
